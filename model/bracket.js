@@ -8,10 +8,10 @@ class Bracket {
   init() {
     this.rounds = [];
     // figure out how many rounds we'll need based on the number of players
-    let numRounds = Math.ceil(Math.sqrt(this.choices.length));
+    this.numRounds = Math.ceil(Math.log2(this.choices.length));
 
     // figure out how many players we need to fill out the first round
-    let numTotalPlayers = Math.pow(2, numRounds);
+    let numTotalPlayers = Math.pow(2, this.numRounds);
 
     // seed the players we have
     let seed = 1;

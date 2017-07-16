@@ -47,7 +47,13 @@ module.exports = {
   },
 
   currentRound: (req, res) => {
-    res.json(getBracket(req).activeGames());
+    let bracket = getBracket(req);
+    
+    res.json({
+      currentRound: bracket.rounds.length,
+      totalRounds: bracket.numRounds,
+      matches: bracket.activeGames()
+    });
   },
 
   vote: (req, res) => {
