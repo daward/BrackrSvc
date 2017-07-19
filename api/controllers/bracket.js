@@ -43,13 +43,13 @@ module.exports = {
   },
 
   get: (req, res) => {
-    res.json({ id: id, choices: getBracket(req).choices });
+    res.json({ id: req.swagger.params.id.value, choices: getBracket(req).choices });
   },
 
   currentRound: (req, res) => {
     let bracket = getBracket(req);
     
-    res.json({
+      res.json({
       currentRound: bracket.rounds.length,
       totalRounds: bracket.numRounds,
       matches: bracket.activeGames()
