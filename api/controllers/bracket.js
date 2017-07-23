@@ -66,7 +66,8 @@ module.exports = {
     let retVal = {
       currentRound: bracket.rounds.length,
       totalRounds: bracket.numRounds,
-      matches: []
+      matches: [],
+      votingId: bracket.id
     }
 
     if(bracket.active) {

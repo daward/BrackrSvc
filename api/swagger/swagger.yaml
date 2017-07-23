@@ -153,11 +153,14 @@ definitions:
       - currentRound
       - totalRounds
       - matches
+      - votingId
     properties:
       currentRound:
         type: number
       totalRounds:
         type: number
+      votingId:
+        type: string
       matches:
         type: array
         items:
