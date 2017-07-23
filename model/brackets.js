@@ -1,3 +1,4 @@
 module.exports = {
-  brackets: {}
+  brackets: {},
+  adminBrackets: {}
 }

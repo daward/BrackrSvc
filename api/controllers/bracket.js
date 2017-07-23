@@ -10,10 +10,10 @@
 
   It is a good idea to list the modules that your application depends on in the package.json in the project root
  */
-var util = require('util');
-var shortid = require('shortid');
-var brackets = require("../../model/brackets");
-var Bracket = require("../../model/bracket");
+const util = require('util');
+const shortid = require('shortid');
+const bracketIndex = require("../../model/brackets");
+const Bracket = require("../../model/bracket");
 
 /*
  Once you 'require' a module you can reference the things that it exports.  These are defined in module.exports.
@@ -30,24 +30,33 @@ var Bracket = require("../../model/bracket");
 
 let getBracket = req => {
   var id = req.swagger.params.id.value;
-  return brackets[id];
+  return bracketIndex.brackets[id] || bracketIndex.adminBrackets[id];
+};
+
+
+let getAdminBracket = req => {
+  var id = req.swagger.params.id.value;
+  return bracketIndex.adminBrackets[id];
 };
 
 module.exports = {
   create: (req, res) => {
-    var id = shortid.generate();
     var choices = req.swagger.params.choices.value;
-    brackets[id] = new Bracket(choices);
-    brackets[id].init();
-    res.json({ id: id, choices: choices });
+    let bracket = new Bracket(choices);
+    let adminId = shortid.generate();
+    bracket.init();
+    bracketIndex.brackets[bracket.id] = bracket;
+    bracketIndex.adminBrackets[adminId] = bracket;
+    res.json({ id: adminId, choices: choices });
   },
 
   get: (req, res) => {
-    res.json({ id: req.swagger.params.id.value, choices: getBracket(req).originalChoices });
+    let bracket = getBracket(req)
+    res.json({ id: bracket.id, choices: bracket.originalChoices });
   },
 
   rerun: (req, res) => {
-    let bracket = getBracket(req);
+    let bracket = getAdminBracket(req);
     bracket.init();
     res.json();
   },
@@ -78,7 +87,7 @@ module.exports = {
   },
 
   close: (req, res) => {
-    var bracket = getBracket(req);
+    var bracket = getAdminBracket(req);
     bracket.closeRound();
     res.json();
   }

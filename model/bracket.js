@@ -1,7 +1,9 @@
 const _ = require("lodash");
+const shortid = require('shortid');
 
 class Bracket {
   constructor(choices) {
+    this.id = shortid.generate();
     this.choices = choices;
     this.originalChoices = choices;
     this.results = [];
