@@ -3,10 +3,18 @@ const _ = require("lodash");
 class Bracket {
   constructor(choices) {
     this.choices = choices;
+    this.originalChoices = choices;
+    this.results = [];
+    this.active = false;
   }
 
   init() {
+    this.active = true;
     this.rounds = [];
+
+    // remove winners
+    this.choices = _.difference(this.choices, this.results);
+
     // figure out how many rounds we'll need based on the number of players
     this.numRounds = Math.ceil(Math.log2(this.choices.length));
 
@@ -51,7 +59,7 @@ class Bracket {
 
   vote(matchId, seed) {
     let match = this.activeMatch(matchId);
-    if(match.players[0].seed === seed) {
+    if (match.players[0].seed === seed) {
       match.scores[0]++;
     } else if (match.players[1].seed === seed) {
       match.scores[1]++;
@@ -63,7 +71,18 @@ class Bracket {
   }
 
   closeRound() {
-    this.rounds.push(this.buildRound(this.getWinners()));
+    if (this.active) {
+      if (this.rounds.length === this.numRounds) {
+        this.results.push(this.getWinners()[0].data);
+        let leftOvers = _.difference(this.choices, this.results);
+        if(leftOvers.length === 1) {
+          this.results.push(leftOvers[0]);
+        }
+        this.active = false;
+      } else {
+        this.rounds.push(this.buildRound(this.getWinners()));
+      }
+    }
   }
 
   getWinners() {

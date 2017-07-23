@@ -43,17 +43,30 @@ module.exports = {
   },
 
   get: (req, res) => {
-    res.json({ id: req.swagger.params.id.value, choices: getBracket(req).choices });
+    res.json({ id: req.swagger.params.id.value, choices: getBracket(req).originalChoices });
+  },
+
+  rerun: (req, res) => {
+    let bracket = getBracket(req);
+    bracket.init();
+    res.json();
   },
 
   currentRound: (req, res) => {
     let bracket = getBracket(req);
-    
-      res.json({
+    let retVal = {
       currentRound: bracket.rounds.length,
       totalRounds: bracket.numRounds,
-      matches: bracket.activeGames()
-    });
+      matches: []
+    }
+
+    if(bracket.active) {
+      retVal.matches = bracket.activeGames();
+    } else {
+      retVal.results = bracket.results;
+    }
+
+    res.json(retVal);
   },
 
   vote: (req, res) => {

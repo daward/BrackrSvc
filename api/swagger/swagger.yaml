@@ -57,6 +57,23 @@ paths:
           schema:
             # a pointer to a definition
             $ref: "#/definitions/CreateBracketResponse"
+  /bracket/{id}/next:
+    x-swagger-router-controller: bracket
+    post:
+      description: Re-runs the bracket to get the best remaining choice
+      # used as the method name of the controller
+      operationId: rerun
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            # a pointer to a definition
+            $ref: "#/definitions/CreateBracketResponse"
   /bracket/{id}/round/current:
     x-swagger-router-controller: bracket
     get:
@@ -126,6 +143,10 @@ definitions:
         type: array
         items:
           type: string
+      results:
+        type: array
+        items:
+          type: string
 
   Round:
     required:
@@ -141,6 +162,10 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Match'
+      results:
+        type: array
+        items:
+          type: string
   Match:
     required:
       - id
