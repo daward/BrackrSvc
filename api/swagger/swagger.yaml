@@ -27,13 +27,11 @@ paths:
       operationId: create
       parameters:
         - in: body
-          name: choices
-          description: choices in the bracket
+          name: bracketRequest
+          description: definition of the bracket
           required: true
           schema:
-            type: array
-            items: 
-              type: string
+            $ref: "#/definitions/CreateBracketRequest"
       responses:
         "200":
           description: Success
@@ -143,17 +141,31 @@ definitions:
         type: array
         items:
           type: string
+      title:
+        type: string
       results:
         type: array
         items:
           type: string
 
+  CreateBracketRequest:
+    required:
+      - choices
+      - title
+    properties:
+      choices:
+        type: array
+        items:
+          type: string
+      title:
+        type: string
   Round:
     required:
       - currentRound
       - totalRounds
       - matches
       - votingId
+      - title
     properties:
       currentRound:
         type: number
@@ -165,6 +177,8 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Match'
+      title:
+        type: string
       results:
         type: array
         items:

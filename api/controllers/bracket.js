@@ -11,7 +11,7 @@
   It is a good idea to list the modules that your application depends on in the package.json in the project root
  */
 const util = require('util');
-const shortid = require('shortid');
+const shortid = require('shortid32');
 const bracketIndex = require("../../model/brackets");
 const Bracket = require("../../model/bracket");
 
@@ -41,18 +41,19 @@ let getAdminBracket = req => {
 
 module.exports = {
   create: (req, res) => {
-    var choices = req.swagger.params.choices.value;
-    let bracket = new Bracket(choices);
+    let choices = req.swagger.params.bracketRequest.value.choices;
+    let title = req.swagger.params.bracketRequest.value.title;
+    let bracket = new Bracket(title, choices);
     let adminId = shortid.generate();
     bracket.init();
     bracketIndex.brackets[bracket.id] = bracket;
     bracketIndex.adminBrackets[adminId] = bracket;
-    res.json({ id: adminId, choices: choices });
+    res.json({ id: adminId, choices: choices, title: title });
   },
 
   get: (req, res) => {
     let bracket = getBracket(req)
-    res.json({ id: bracket.id, choices: bracket.originalChoices });
+    res.json({ id: bracket.id, choices: bracket.originalChoices, title: bracket.title });
   },
 
   rerun: (req, res) => {
@@ -67,10 +68,11 @@ module.exports = {
       currentRound: bracket.rounds.length,
       totalRounds: bracket.numRounds,
       matches: [],
-      votingId: bracket.id
+      votingId: bracket.id,
+      title: bracket.title
     }
 
-    if(bracket.active) {
+    if (bracket.active) {
       retVal.matches = bracket.activeGames();
     } else {
       retVal.results = bracket.results;
