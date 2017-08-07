@@ -53,7 +53,7 @@ module.exports = {
 
   get: (req, res) => {
     let bracket = getBracket(req)
-    res.json({ id: bracket.id, choices: bracket.originalChoices, title: bracket.title });
+    res.json({ id: bracket.id, choices: bracket.getChoices(), title: bracket.title });
   },
 
   rerun: (req, res) => {
@@ -64,18 +64,19 @@ module.exports = {
 
   currentRound: (req, res) => {
     let bracket = getBracket(req);
+    let tournament = bracket.getCurrentTournament() 
     let retVal = {
-      currentRound: bracket.rounds.length,
-      totalRounds: bracket.numRounds,
+      currentRound: tournament.rounds.length,
+      totalRounds: tournament.numRounds,
       matches: [],
       votingId: bracket.id,
       title: bracket.title
     }
 
-    if (bracket.active) {
-      retVal.matches = bracket.activeGames();
+    if (bracket.isActive()) {
+      retVal.matches = tournament.activeGames();
     } else {
-      retVal.results = bracket.results;
+      retVal.results = bracket.getWinners();
     }
 
     res.json(retVal);
@@ -85,13 +86,13 @@ module.exports = {
     var matchId = req.swagger.params.matchId.value;
     var seed = req.swagger.params.seed.value;
     var bracket = getBracket(req);
-    bracket.vote(matchId, seed);
+    bracket.getCurrentTournament().vote(matchId, seed);
     res.json();
   },
 
   close: (req, res) => {
     var bracket = getAdminBracket(req);
-    bracket.closeRound();
+    bracket.getCurrentTournament().closeRound();
     res.json();
   }
 };
