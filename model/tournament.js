@@ -38,6 +38,15 @@ class Tournament {
     return matches;
   }
 
+  getCompletedRounds() {
+    // if its active we don't want the current round
+    if(this.active) {
+      _.slice(this.rounds, 0, this.rounds.length - 1);
+    } else {
+      return this.rounds;
+    }
+  }
+
   closeRound() {
     if (this.active) {
       // the tournament is over

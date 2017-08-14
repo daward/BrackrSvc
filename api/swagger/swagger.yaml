@@ -88,6 +88,26 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Round'
+  /bracket/{id}/tournament/{tournamentId}:
+    x-swagger-router-controller: bracket
+    get:
+      description: Gets an existing bracket by id
+      # used as the method name of the controller
+      operationId: getCompletedTournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+        - in: path
+          name: tournamentId
+          required: true
+          type: number
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Tournament'
   /bracket/{id}/round/next:
     x-swagger-router-controller: bracket
     post:
@@ -131,6 +151,44 @@ paths:
     x-swagger-pipe: swagger_raw
 # complex objects have schema definitions
 definitions:
+  Tournament:
+    required:
+      - rounds
+    properties:
+      rounds:
+        type: array
+        items:
+          $ref: '#/definitions/CompletedRound'
+  CompletedRound:
+    required:
+      - matches
+    properties:
+      matches:
+        type: array
+        items:
+          $ref: '#/definitions/CompletedMatch'
+  CompletedMatch:
+    required:
+      - winner
+      - loser
+    properties:
+      winner:
+        $ref: '#/definitions/Player'
+      loser:
+        $ref: '#/definitions/Player'
+
+  Player:
+    required:
+      - data
+      - seed
+      - score
+    properties:
+      data:
+        type: string
+      seed:
+        type: number
+      score:
+        type: number
   CreateBracketResponse:
     required:
       - id

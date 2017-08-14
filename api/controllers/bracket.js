@@ -51,6 +51,14 @@ module.exports = {
     res.json({ id: adminId, choices: choices, title: title });
   },
 
+  getCompletedTournament: (req, res) => {
+    let bracket = getBracket(req);
+    let tournamentId = req.swagger.params.tournamentId.value;
+    const tournament = bracket.tournaments[tournamentId];
+    const rounds = tournament.getCompletedRounds();
+    res.json({ rounds });
+  },
+
   get: (req, res) => {
     let bracket = getBracket(req)
     res.json({ id: bracket.id, choices: bracket.getChoices(), title: bracket.title });
@@ -64,7 +72,7 @@ module.exports = {
 
   currentRound: (req, res) => {
     let bracket = getBracket(req);
-    let tournament = bracket.getCurrentTournament() 
+    let tournament = bracket.getCurrentTournament()
     let retVal = {
       currentRound: tournament.rounds.length,
       totalRounds: tournament.numRounds,
