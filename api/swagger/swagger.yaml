@@ -208,6 +208,14 @@ definitions:
         type: number
       score:
         type: number
+  Choice:
+    required:
+      - text
+    properties:
+      text:
+        type: string
+      image:
+        type: string
   CreateBracketResponse:
     required:
       - id
@@ -217,7 +225,7 @@ definitions:
       choices:
         type: array
         items:
-          type: string
+          $ref: '#/definitions/Choice'
       title:
         type: string
       results:
@@ -233,7 +241,7 @@ definitions:
       choices:
         type: array
         items:
-          type: string
+          $ref: '#/definitions/Choice'
       title:
         type: string
   Round:
@@ -259,7 +267,7 @@ definitions:
       results:
         type: array
         items:
-          type: string
+          $ref: '#/definitions/Choice'
   Match:
     required:
       - id
@@ -279,7 +287,7 @@ definitions:
       seed:
         type: number
       data:
-        type: string
+        $ref: '#/definitions/Choice'
   Images:
     required:
       - images
