@@ -19,6 +19,60 @@ consumes:
 produces:
   - application/json
 paths:
+  /contestantgroups:
+    x-swagger-router-controller: contestantgroup
+    post:
+      description: creates a contestant group
+      operationId: createContestantGroup
+      parameters:
+        - in: body
+          name: contestantGroupRequest
+          description: a set of contestants with a title
+          required: true
+          schema:
+            $ref: "#/definitions/ContestantGroupRequest"
+      responses:
+        "200":
+          description: The set of contestants
+          schema:
+            $ref: "#/definitions/ContestantGroupResponse"
+  
+  /contestantgroups/{id}:
+    x-swagger-router-controller: contestantgroup
+    put:
+      description: updates a contestant group
+      operationId: updateContestantGroup
+      parameters:
+        - in: path
+          name: id
+          description: the id of the contestant group to update
+          required: true
+          type: string
+        - in: body
+          name: contestantGroupRequest
+          description: a set of contestants with a title
+          required: true
+          schema:
+            $ref: "#/definitions/ContestantGroupRequest"
+      responses:
+        "200":
+          description: The set of contestants
+          schema:
+            $ref: "#/definitions/ContestantGroupResponse"
+    get:
+      description: gets a contestant group
+      operationId: getContestantGroup
+      parameters:
+        - in: path
+          name: id
+          description: the id of the contestant group to update
+          required: true
+          type: string
+      responses:
+        "200":
+          description: The set of contestants
+          schema:
+            $ref: "#/definitions/ContestantGroupResponse"
   /images:
     x-swagger-router-controller: images
     get:
@@ -43,7 +97,7 @@ paths:
     post:
       description: Creates a new bracket
       # used as the method name of the controller
-      operationId: create
+      operationId: createBracket
       parameters:
         - in: body
           name: bracketRequest
@@ -62,7 +116,7 @@ paths:
     get:
       description: Gets an existing bracket by id
       # used as the method name of the controller
-      operationId: get
+      operationId: getBracket
       parameters:
         - in: path
           name: id
@@ -216,11 +270,11 @@ definitions:
         type: string
       image:
         type: string
-  CreateBracketResponse:
+  ContestantGroupResponse:
     required:
-      - id
+      - contestantGroupId
     properties:
-      id:
+      contestantGroupId:
         type: string
       choices:
         type: array
@@ -234,6 +288,23 @@ definitions:
           type: string
 
   CreateBracketRequest:
+    required:
+      - contestantGroupId
+    properties:
+      contestantGroupId:
+        type: string
+
+  CreateBracketResponse:
+    required:
+      - contestantGroupId
+      - bracketId
+    properties:
+      contestantGroupId:
+        type: string
+      bracketId:
+        type: string
+
+  ContestantGroupRequest:
     required:
       - choices
       - title

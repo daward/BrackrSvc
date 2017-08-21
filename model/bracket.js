@@ -3,18 +3,18 @@ const shortid = require('shortid32');
 const Tournament = require("./tournament");
 
 class Bracket {
-  constructor(title, choices) {
+  constructor(contestantGroup) {
     this.id = shortid.generate();
+    this.contestantGroup = contestantGroup;
     let seed = 1;
-    // seed the players
-    this.players = _.map(choices, choice => {
+    this.players = _.map(contestantGroup.choices, choice => {
       return {
         seed: seed++,
-        data: choice
+        data: _.cloneDeep(choice)
       }
     });
     this.tournaments = [];
-    this.title = title;
+    this.title = contestantGroup.title;
   }
 
   init() {

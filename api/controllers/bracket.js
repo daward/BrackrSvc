@@ -14,6 +14,7 @@ const util = require('util');
 const shortid = require('shortid32');
 const bracketIndex = require("../../model/brackets");
 const Bracket = require("../../model/bracket");
+const cgIndex = require("../../model/contestantgroups");
 
 /*
  Once you 'require' a module you can reference the things that it exports.  These are defined in module.exports.
@@ -40,15 +41,21 @@ let getAdminBracket = req => {
 };
 
 module.exports = {
-  create: (req, res) => {
-    let choices = req.swagger.params.bracketRequest.value.choices;
-    let title = req.swagger.params.bracketRequest.value.title;
-    let bracket = new Bracket(title, choices);
+  createBracket: (req, res) => {
+    let contestantGroupId = req.swagger.params.bracketRequest.value.contestantGroupId;
+    let contestantGroup = cgIndex.getGroupById(contestantGroupId);
+    let bracket = new Bracket(contestantGroup);
     let adminId = shortid.generate();
-    bracket.init();
     bracketIndex.brackets[bracket.id] = bracket;
     bracketIndex.adminBrackets[adminId] = bracket;
-    res.json({ id: adminId, choices: choices, title: title });
+    bracket.init();
+    res.json({ bracketId: adminId, contestantGroupId });
+  },
+
+  start: (req, res) => {
+    let bracket = getAdminBracket(req);
+    bracket.init();
+    res.json({});     
   },
 
   getCompletedTournament: (req, res) => {
@@ -59,9 +66,9 @@ module.exports = {
     res.json({ rounds });
   },
 
-  get: (req, res) => {
+  getBracket: (req, res) => {
     let bracket = getBracket(req)
-    res.json({ id: bracket.id, choices: bracket.getChoices(), title: bracket.title });
+    res.json({ bracketId: bracket.id, contestantGroupId: bracket.contestantGroup.contestantGroupId });
   },
 
   rerun: (req, res) => {
