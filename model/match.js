@@ -4,7 +4,18 @@ class Match {
   constructor({ id, players }) {
     this.id = id;
     this.players = players;
-    this.scores = [0, 0];
+    this.votes = [];
+  }
+
+  getScoresBySeed() {
+    let scores = _.countBy(this.votes, 'seed');
+    return [{
+      seed: this.players[0].seed,
+      score: _.get(scores, this.players[0].seed, 0),
+    }, {
+      seed: this.players[1].seed,
+      score: _.get(scores, this.players[1].seed, 0),
+    }];
   }
 
   getWinner() {
@@ -12,12 +23,10 @@ class Match {
     if (this.players[1].slug) {
       return this.players[0];
     }
-    // otherwise return the higher score, higher seed wins in a tie
-    if (this.scores[0] >= this.scores[1]) {
-      return this.players[0];
-    } else {
-      return this.players[1];
-    }
+
+    let scores = this.getScoresBySeed();
+    let winningSeed = _.maxBy(scores, 'score').seed;
+    return _.find(this.players, player => player.seed === winningSeed);
   }
 
   getLoser() {
@@ -26,20 +35,13 @@ class Match {
       return
     }
 
-    // otherwise return the higher score, higher seed wins in a tie
-    if (this.scores[0] >= this.scores[1]) {
-      return this.players[1];
-    } else {
-      return this.players[0];
-    }
+    let scores = this.getScoresBySeed();
+    let losingSeed = _.minBy(scores, 'score').seed;
+    return _.find(this.players, player => player.seed === losingSeed);
   }
 
-  vote(seed) {
-    if (this.players[0].seed === seed) {
-      this.scores[0]++;
-    } else if (this.players[1].seed === seed) {
-      this.scores[1]++;
-    }
+  vote({ seed, voterId }) {
+    this.votes.push({ seed, voterId });
   }
 
   /**
@@ -54,7 +56,7 @@ class Match {
    * @param {*} seed 
    */
   getLostTo(seed) {
-    if(this.getWinner().seed === seed) {
+    if (this.getWinner().seed === seed) {
       return this.getLoser();
     }
   }
