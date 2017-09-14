@@ -83,8 +83,8 @@ class Tournament {
     round = _.map(round, match => {
       let scores = match.getScoresBySeed();
       match.scores = [
-       _.find(scores, score => score.seed === match.players[0].seed).score,
-       _.find(scores, score => score.seed === match.players[1].seed).score 
+        _.find(scores, score => score.seed === match.players[0].seed).score,
+        _.find(scores, score => score.seed === match.players[1].seed).score
       ];
       return match;
     })
@@ -106,8 +106,8 @@ class Tournament {
     return _.filter(this.currentRound(), match => !match.hasSlug());
   }
 
-  vote(matchId, seed) {
-    this.activeMatch(matchId).vote({ seed });
+  vote({ matchId, seed, voterId }) {
+    this.activeMatch(matchId).vote({ seed, voterId });
   }
 }
 

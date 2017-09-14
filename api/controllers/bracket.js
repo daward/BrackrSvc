@@ -55,7 +55,7 @@ module.exports = {
   start: (req, res) => {
     let bracket = getAdminBracket(req);
     bracket.init();
-    res.json({});     
+    res.json({});
   },
 
   getCompletedTournament: (req, res) => {
@@ -100,8 +100,9 @@ module.exports = {
   vote: (req, res) => {
     var matchId = req.swagger.params.matchId.value;
     var seed = req.swagger.params.seed.value;
+    var voterId = req.swagger.params["X-User-ID"].value;
     var bracket = getBracket(req);
-    bracket.getCurrentTournament().vote(matchId, seed);
+    bracket.getCurrentTournament().vote({ matchId, seed, voterId });
     res.json();
   },
 

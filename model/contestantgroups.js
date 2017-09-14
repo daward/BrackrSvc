@@ -3,7 +3,7 @@ const shortid = require('shortid32');
 const ContestantGroup = require("./contestantgroup");
 
 module.exports = {
-  addGroup: (title, choices) => {
+  addGroup: ({ title, choices, userId }) => {
     let id = shortid.generate();
     groups[id] = new ContestantGroup(id, title, choices);
     return groups[id];

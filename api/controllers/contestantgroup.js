@@ -17,7 +17,8 @@ module.exports = {
   createContestantGroup: (req, res) => {
     let choices = req.swagger.params.contestantGroupRequest.value.choices;
     let title = req.swagger.params.contestantGroupRequest.value.title;
-    let cg = cgIndex.addGroup(title, choices);
+    let userId = req.swagger.params["X-User-ID"].value;
+    let cg = cgIndex.addGroup({ title, choices, userId });
     res.json(cg);
   },
 
