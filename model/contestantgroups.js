@@ -1,18 +1,21 @@
-var groups = {}
+const DataIndex = require("./dataindex");
+const dataIndex = new DataIndex();
 const shortid = require('shortid32');
 const ContestantGroup = require("./contestantgroup");
 
 module.exports = {
   addGroup: ({ title, choices, userId }) => {
     let id = shortid.generate();
-    groups[id] = new ContestantGroup(id, title, choices);
-    return groups[id];
+    let cg = new ContestantGroup(id, title, choices);
+    return dataIndex.add({ userId, id, data: cg });
   },
-  getGroup: req => {
-    var id = req.swagger.params.id.value;
-    return groups[id];
+
+  getGroup: ({ userId, id }) => {
+    return dataIndex.get({ userId, id });
   },
-  getGroupById: id => {
-    return groups[id];
+
+  getGroups: ({ userId }) => {
+    return dataIndex.getAll({ userId });
   }
+
 }

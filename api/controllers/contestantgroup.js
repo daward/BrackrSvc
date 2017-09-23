@@ -11,6 +11,7 @@
   It is a good idea to list the modules that your application depends on in the package.json in the project root
  */
 const cgIndex = require("../../model/contestantgroups");
+const _ = require("lodash");
 
 module.exports = {
 
@@ -23,14 +24,26 @@ module.exports = {
   },
 
   updateContestantGroup: (req, res) => {
-    let cg = cgIndex.getGroup(req);
+    let id = req.swagger.params.id.value;
+    let cg = cgIndex.getGroup({ userId: res.locals.getUserId(), id });
     cg.title = req.swagger.params.contestantGroupRequest.value.title;
     cg.choices = req.swagger.params.contestantGroupRequest.value.choices;
     res.json(cg);
   },
 
   getContestantGroup: (req, res) => {
-    let cg = cgIndex.getGroup(req);
+    let id = req.swagger.params.id.value;
+    let cg = cgIndex.getGroup({ userId: res.locals.getUserId(), id });
     res.json(cg);
+  },
+
+  getContestantGroups: (req, res) => {
+    let groups = cgIndex.getGroups({ userId: res.locals.getUserId() });
+
+    res.json(_.map(groups, group => ({
+      self: res.locals.selfLink(`/create/${group.contestantGroupId}`),
+      title: group.title,
+      id: group.contestantGroupId
+    })));
   }
 }

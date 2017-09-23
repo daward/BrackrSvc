@@ -21,6 +21,21 @@ produces:
 paths:
   /contestantgroups:
     x-swagger-router-controller: contestantgroup
+    get:
+      description: gets the user's contestant groups
+      operationId: getContestantGroups
+      parameters:
+        - in: header
+          name: X-User-ID
+          required: true
+          type: string
+      responses:
+        "200":
+          description: The set of contestant groups
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ContestantGroupReference'
     post:
       description: creates a contestant group
       operationId: createContestantGroup
@@ -103,9 +118,25 @@ paths:
             # a pointer to a definition
             $ref: "#/definitions/Images"
 
-  /bracket:
+  /brackets:
     # binds a127 app logic to a route
     x-swagger-router-controller: bracket
+    get:
+      description: Gets the brackets the user is allowed to see
+      operationId: getBrackets
+      parameters:
+        - in: header
+          name: X-User-ID
+          required: true
+          type: string
+      responses:
+        "200":
+          description: The set of brackets
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/BracketReference'
+      
     post:
       description: Creates a new bracket
       # used as the method name of the controller
@@ -127,7 +158,7 @@ paths:
           schema:
             # a pointer to a definition
             $ref: "#/definitions/CreateBracketResponse"
-  /bracket/{id}:
+  /brackets/{id}:
     x-swagger-router-controller: bracket
     get:
       description: Gets an existing bracket by id
@@ -144,7 +175,7 @@ paths:
           schema:
             # a pointer to a definition
             $ref: "#/definitions/CreateBracketResponse"
-  /bracket/{id}/next:
+  /brackets/{id}/next:
     x-swagger-router-controller: bracket
     post:
       description: Re-runs the bracket to get the best remaining choice
@@ -165,7 +196,7 @@ paths:
           schema:
             # a pointer to a definition
             $ref: "#/definitions/CreateBracketResponse"
-  /bracket/{id}/round/current:
+  /brackets/{id}/round/current:
     x-swagger-router-controller: bracket
     get:
       description: Gets an existing bracket by id
@@ -185,7 +216,7 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Round'
-  /bracket/{id}/tournament/{tournamentId}:
+  /brackets/{id}/tournament/{tournamentId}:
     x-swagger-router-controller: bracket
     get:
       description: Gets an existing bracket by id
@@ -209,7 +240,7 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Tournament'
-  /bracket/{id}/round/next:
+  /brackets/{id}/round/next:
     x-swagger-router-controller: bracket
     post:
       description: Gets an existing bracket by id
@@ -228,7 +259,7 @@ paths:
         "200":
           description: Success
   
-  /bracket/{id}/match/{matchId}/player/{seed}:
+  /brackets/{id}/match/{matchId}/player/{seed}:
     x-swagger-router-controller: bracket
     post:
       description: Gets an existing bracket by id
@@ -341,6 +372,36 @@ definitions:
       bracketId:
         type: string
 
+  BracketReference:
+    required:
+      - self
+      - id
+      - currentRound
+      - numberOfRounds
+      - title
+    properties:
+      self:
+        type: string
+      id:
+        type: string
+      currentRound:
+        type: number
+      numberOfRounds:
+        type: number
+      title:
+        type: string
+  ContestantGroupReference:
+    required:
+      - self
+      - title
+      - id
+    properties:
+      self:
+        type: string
+      title:
+        type: string
+      id:
+        type: string
   ContestantGroupRequest:
     required:
       - choices
@@ -357,15 +418,15 @@ definitions:
       - currentRound
       - totalRounds
       - matches
-      - votingId
+      - admin
       - title
     properties:
       currentRound:
         type: number
       totalRounds:
         type: number
-      votingId:
-        type: string
+      admin:
+        type: boolean
       matches:
         type: array
         items:

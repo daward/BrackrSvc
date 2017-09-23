@@ -4,6 +4,7 @@ var SwaggerExpress = require('swagger-express-mw');
 var app = require('express')();
 const YAML = require('yamljs');
 const path = require("path");
+const cors = require("cors");
 
 module.exports = app; // for testing
 
@@ -12,6 +13,18 @@ var config = {
 };
 var express = require("express");
 
+app.use((req, res, next) => {
+  res.locals.getUserId = () => req.swagger.params["X-User-ID"].value;
+  next();
+});
+
+app.use((req, res, next) => {
+  res.locals.selfLink = route => `http://localhost:10010${route}`
+  next();
+});
+
+app.use(cors());
+
 SwaggerExpress.create(config, function(err, swaggerExpress) {
   if (err) { throw err; }
   //swaggerExpress.runner.config.swagger.bagpipes._swagger_validate.validateResponse = false;
@@ -19,6 +32,7 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   swaggerExpress.register(app);
   var swaggerUiPath = path.join(__dirname, "./swagger-ui");
   app.use("/swagger-ui", express.static(swaggerUiPath));
+  
 
   var port = process.env.PORT   || 10010;
   app.listen(port);

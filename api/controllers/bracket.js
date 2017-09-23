@@ -13,8 +13,8 @@
 const util = require('util');
 const shortid = require('shortid32');
 const bracketIndex = require("../../model/brackets");
-const Bracket = require("../../model/bracket");
 const cgIndex = require("../../model/contestantgroups");
+const _ = require("lodash");
 
 /*
  Once you 'require' a module you can reference the things that it exports.  These are defined in module.exports.
@@ -29,37 +29,30 @@ const cgIndex = require("../../model/contestantgroups");
   we specify that in the exports of this module that 'hello' maps to the function named 'hello'
  */
 
-let getBracket = req => {
-  var id = req.swagger.params.id.value;
-  return bracketIndex.brackets[id] || bracketIndex.adminBrackets[id];
-};
+const userBracketIds = (req, res) => {
+  let retVal = bracketIds(req);
+  retVal.userId = res.locals.getUserId();
+  return retVal;
+}
 
-
-let getAdminBracket = req => {
-  var id = req.swagger.params.id.value;
-  return bracketIndex.adminBrackets[id];
-};
+const bracketIds = req => {
+  return {
+    bracketId: req.swagger.params.id.value
+  }
+}
 
 module.exports = {
   createBracket: (req, res) => {
     let contestantGroupId = req.swagger.params.bracketRequest.value.contestantGroupId;
-    let contestantGroup = cgIndex.getGroupById(contestantGroupId);
-    let bracket = new Bracket(contestantGroup);
-    let adminId = shortid.generate();
-    bracketIndex.brackets[bracket.id] = bracket;
-    bracketIndex.adminBrackets[adminId] = bracket;
-    bracket.init();
-    res.json({ bracketId: adminId, contestantGroupId });
-  },
+    let contestantGroup = cgIndex.getGroup({ userId: res.locals.getUserId(), id: contestantGroupId });
 
-  start: (req, res) => {
-    let bracket = getAdminBracket(req);
-    bracket.init();
-    res.json({});
+    let bracket = bracketIndex.addBracket({ contestantGroup, userId: res.locals.getUserId() })
+
+    res.json({ bracketId: bracket.id, contestantGroupId });
   },
 
   getCompletedTournament: (req, res) => {
-    let bracket = getBracket(req);
+    let bracket = bracketIndex.getBracket(bracketIds(req));
     let tournamentId = req.swagger.params.tournamentId.value;
     const tournament = bracket.tournaments[tournamentId];
     const rounds = tournament.getCompletedRounds();
@@ -67,24 +60,24 @@ module.exports = {
   },
 
   getBracket: (req, res) => {
-    let bracket = getBracket(req)
+    let bracket = bracketIndex.getBracket(bracketIds(req))
     res.json({ bracketId: bracket.id, contestantGroupId: bracket.contestantGroup.contestantGroupId });
   },
 
   rerun: (req, res) => {
-    let bracket = getAdminBracket(req);
+    let bracket = bracketIndex.getBracket(userBracketIds(req, res));
     bracket.init();
     res.json();
   },
 
   currentRound: (req, res) => {
-    let bracket = getBracket(req);
+    let bracket = bracketIndex.getBracket(bracketIds(req));
     let tournament = bracket.getCurrentTournament()
     let retVal = {
       currentRound: tournament.rounds.length,
       totalRounds: tournament.numRounds,
       matches: [],
-      votingId: bracket.id,
+      admin: !!bracketIndex.getBracket(userBracketIds(req, res)),
       title: bracket.title
     }
 
@@ -100,15 +93,27 @@ module.exports = {
   vote: (req, res) => {
     var matchId = req.swagger.params.matchId.value;
     var seed = req.swagger.params.seed.value;
-    var voterId = req.swagger.params["X-User-ID"].value;
-    var bracket = getBracket(req);
+    let voterId = res.locals.getUserId();
+    var bracket = bracketIndex.getBracket(bracketIds(req));
     bracket.getCurrentTournament().vote({ matchId, seed, voterId });
     res.json();
   },
 
   close: (req, res) => {
-    var bracket = getAdminBracket(req);
+    var bracket = bracketIndex.getBracket(userBracketIds(req, res));
     bracket.getCurrentTournament().closeRound();
     res.json();
+  },
+
+  getBrackets: (req, res) => {
+    let brackets = bracketIndex.getBrackets({ userId: res.locals.getUserId() })
+
+    res.json(_.map(brackets, bracket => ({
+      self: res.locals.selfLink(`/brackets/${bracket.id}`),
+      id: bracket.id,
+      title: bracket.title,
+      currentRound: bracket.getCurrentTournament().rounds.length,
+      numberOfRounds: bracket.getCurrentTournament().numRounds
+    })));
   }
 };
