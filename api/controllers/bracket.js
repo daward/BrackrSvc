@@ -44,8 +44,7 @@ const bracketIds = req => {
 module.exports = {
   createBracket: (req, res) => {
     let contestantGroupId = req.swagger.params.bracketRequest.value.contestantGroupId;
-    let contestantGroup = cgIndex.getGroup({ userId: res.locals.getUserId(), id: contestantGroupId });
-
+    let contestantGroup = cgIndex.getGroup({ id: contestantGroupId });
     let bracket = bracketIndex.addBracket({ contestantGroup, userId: res.locals.getUserId() })
 
     res.json({ bracketId: bracket.id, contestantGroupId });

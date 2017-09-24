@@ -8,7 +8,11 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "program": "${workspaceRoot}\\app.js"
+      "program": "${workspaceRoot}\\app.js",
+      "env": {
+          "ACCESS_ID": "AKIAITT3T6IUJHSLV5WA",
+          "ACCESS_KEY": "GrvXpgHqqZcZeg1pgEX7j4m4WFE+gxKCWmMwefrZ"
+      }
     }
   ]
 }

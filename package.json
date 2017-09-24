@@ -9,6 +9,7 @@
   "main": "app.js",
   "dependencies": {
     "cors": "^2.8.4",
+    "dynamodb": "^1.0.0",
     "express": "^4.12.3",
     "google-images": "^2.1.0",
     "lodash": "^4.17.4",

@@ -29,7 +29,7 @@ class DataIndex {
     let dataSet =
       userId ? this.indexByUser[userId] : this.indexById
 
-    return dataSet[id];
+    return dataSet ? dataSet[id] : undefined;
   }
 }
 
