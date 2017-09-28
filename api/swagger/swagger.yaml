@@ -350,10 +350,6 @@ definitions:
           $ref: '#/definitions/Choice'
       title:
         type: string
-      results:
-        type: array
-        items:
-          type: string
 
   CreateBracketRequest:
     required:

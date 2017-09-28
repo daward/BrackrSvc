@@ -13,8 +13,8 @@
 const util = require('util');
 const shortid = require('shortid32');
 const bracketIndex = require("../../model/brackets");
-const cgIndex = require("../../model/contestantgroups");
 const _ = require("lodash");
+const cgData = require("../../model/database/contestantgroupdata");
 
 /*
  Once you 'require' a module you can reference the things that it exports.  These are defined in module.exports.
@@ -44,10 +44,13 @@ const bracketIds = req => {
 module.exports = {
   createBracket: (req, res) => {
     let contestantGroupId = req.swagger.params.bracketRequest.value.contestantGroupId;
-    let contestantGroup = cgIndex.getGroup({ id: contestantGroupId });
-    let bracket = bracketIndex.addBracket({ contestantGroup, userId: res.locals.getUserId() })
 
-    res.json({ bracketId: bracket.id, contestantGroupId });
+    cgData.get({
+      id: contestantGroupId, cb: ({ group, error }) => {
+        let bracket = bracketIndex.addBracket({ contestantGroup: group, userId: res.locals.getUserId() })
+        res.json({ bracketId: bracket.id, contestantGroupId });
+      }
+    })
   },
 
   getCompletedTournament: (req, res) => {
