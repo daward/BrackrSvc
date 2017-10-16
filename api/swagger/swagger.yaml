@@ -322,7 +322,6 @@ definitions:
     required:
       - data
       - seed
-      - score
     properties:
       data:
         type: string
@@ -360,11 +359,8 @@ definitions:
 
   CreateBracketResponse:
     required:
-      - contestantGroupId
       - bracketId
     properties:
-      contestantGroupId:
-        type: string
       bracketId:
         type: string
 
@@ -411,9 +407,6 @@ definitions:
         type: string
   Round:
     required:
-      - currentRound
-      - totalRounds
-      - matches
       - admin
       - title
     properties:
@@ -429,6 +422,8 @@ definitions:
           $ref: '#/definitions/Match'
       title:
         type: string
+      totalVotes:
+        type: number
       results:
         type: array
         items:

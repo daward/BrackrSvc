@@ -12,9 +12,13 @@
  */
 const util = require('util');
 const shortid = require('shortid32');
-const bracketIndex = require("../../model/brackets");
 const _ = require("lodash");
 const cgData = require("../../model/database/contestantgroupdata");
+const roundData = require("../../model/database/rounddata");
+const P = require("bluebird");
+const Tournament = require("../../model/tournament");
+const voteData = require("../../model/database/votedata");
+const Match = require("../../model/match");
 
 /*
  Once you 'require' a module you can reference the things that it exports.  These are defined in module.exports.
@@ -35,35 +39,60 @@ const userBracketIds = (req, res) => {
   return retVal;
 }
 
-const bracketIds = req => {
-  return {
-    bracketId: req.swagger.params.id.value
-  }
+const getTournament = (req, res) => {
+  let bracketId = res.locals.getBracketId();
+  let userId = res.locals.getUserId();
+  return P.join(
+    cgData.get({ id: bracketId }),
+    roundData.getForBracket(bracketId),
+    (contestantGroup, roundSet) => new Tournament({ contestantGroup, roundSet, userId }));
 }
 
 module.exports = {
+  /**
+   * creates a bracket with a given contestant group
+   */
   createBracket: (req, res) => {
     let contestantGroupId = req.swagger.params.bracketRequest.value.contestantGroupId;
+    let userId = res.locals.getUserId();
 
-    cgData.get({
-      id: contestantGroupId, cb: ({ group, error }) => {
-        let bracket = bracketIndex.addBracket({ contestantGroup: group, userId: res.locals.getUserId() })
-        res.json({ bracketId: bracket.id, contestantGroupId });
-      }
-    })
+    // first get the group we're making a bracket for
+    return cgData.get({ id: contestantGroupId })
+      // seed the players in that group
+      .tap(group => group.seed())
+      // then save that seeded group
+      .then(group => cgData.save({ userId, title: group.title, choices: group.choices, active: true, voting: true }))
+      // and tell the user about your good work
+      .then(group => res.json({ bracketId: group.contestantGroupId }));
   },
 
+  /**
+   * Given a bracket and tournament, returns the rounds that have been completed
+   */
   getCompletedTournament: (req, res) => {
-    let bracket = bracketIndex.getBracket(bracketIds(req));
     let tournamentId = req.swagger.params.tournamentId.value;
-    const tournament = bracket.tournaments[tournamentId];
-    const rounds = tournament.getCompletedRounds();
-    res.json({ rounds });
+    let bracketId = res.locals.getBracketId();
+
+    P.join(
+      cgData.get({ id: bracketId }),
+      roundData.getForBracket(bracketId),
+      (contestantGroup, rounds) => new Bracket(contestantGroup, rounds))
+      .then(bracket => {
+        const tournament = bracket.tournaments[tournamentId];
+        const rounds = tournament.getCompletedRounds();
+        res.json({ rounds });
+      });
   },
 
   getBracket: (req, res) => {
-    let bracket = bracketIndex.getBracket(bracketIds(req))
-    res.json({ bracketId: bracket.id, contestantGroupId: bracket.contestantGroup.contestantGroupId });
+    cgData.get({ id: res.locals.getBracketId() })
+      .then(bracket => {
+        if (bracket) {
+          res.json({ bracketId: bracket.id });
+        } else {
+          res.json({});
+        }
+      })
   },
 
   rerun: (req, res) => {
@@ -73,49 +102,97 @@ module.exports = {
   },
 
   currentRound: (req, res) => {
-    let bracket = bracketIndex.getBracket(bracketIds(req));
-    let tournament = bracket.getCurrentTournament()
-    let retVal = {
-      currentRound: tournament.rounds.length,
-      totalRounds: tournament.numRounds,
-      matches: [],
-      admin: !!bracketIndex.getBracket(userBracketIds(req, res)),
-      title: bracket.title
-    }
+    getTournament(req, res)
+      .then(tournament => {
+        let current;
+        if (!tournament.isVoting()) {
+          current = {
+            results: [tournament.players()[0].data],
+            admin: tournament.isAdmin(),
+            title: tournament.title()
+          }
+        } else {
+          current = {
+            // current round is a decrement of the last round
+            currentRound: tournament.currentRoundNumber(),
+            // the total rounds is the maximum round number in the tournament
+            totalRounds: tournament.totalRounds(),
+            matches: tournament.matches(),
+            admin: tournament.isAdmin(),
+            title: tournament.title()
+          }
+        }
 
-    if (bracket.isActive()) {
-      retVal.matches = tournament.activeGames();
-    } else {
-      retVal.results = bracket.getWinners();
-    }
-
-    res.json(retVal);
+        // if the round is over, or you aren't the admin, you don't need to know
+        // anything about the number of votes
+        if (current.results || !tournament.isAdmin()) {
+          res.json(current);
+        } else {
+          // if the tournament isnt over and you're the admin you'll want to know how many votes there are
+          voteData.getRoundVotes({ bracketId: tournament.bracketId(), roundNumber: tournament.currentRoundNumber() })
+            .then(voteSet => {
+              current.totalVotes = voteSet.votes.length;
+              res.json(current);
+            });
+        }
+      });
   },
 
   vote: (req, res) => {
-    var matchId = req.swagger.params.matchId.value;
-    var seed = req.swagger.params.seed.value;
-    let voterId = res.locals.getUserId();
-    var bracket = bracketIndex.getBracket(bracketIds(req));
-    bracket.getCurrentTournament().vote({ matchId, seed, voterId });
-    res.json();
+    const matchId = req.swagger.params.matchId.value;
+    const seed = req.swagger.params.seed.value;
+    const userId = res.locals.getUserId();
+    const bracketId = res.locals.getBracketId();
+    const roundNumber = Match.decode(matchId).roundNumber;
+
+    voteData.save({
+      userId, seed, matchId, roundNumber, bracketId
+    }).then(() => res.json());
   },
 
   close: (req, res) => {
-    var bracket = bracketIndex.getBracket(userBracketIds(req, res));
-    bracket.getCurrentTournament().closeRound();
-    res.json();
+    getTournament(req, res)
+      .then(tournament => {
+        // if you're not an admin, get out
+        if (!tournament.isAdmin()) {
+          res.status(403);
+          return;
+        }
+
+        // get all the votes for the round to decide the winners
+        voteData.getRoundVotes({ bracketId: tournament.bracketId(), roundNumber: tournament.currentRoundNumber() })
+          .then(voteSet => {
+            roundData.save({
+              bracketId: tournament.bracketId(),
+              roundNumber: tournament.currentRoundNumber(),
+              tournamentNumber: tournament.tournamentNumber(),
+              results: voteSet.winners()
+            })
+            .then(() => {
+              if(tournament.currentRoundNumber() === 1) {
+                cgData.stopVoting(tournament.bracketId()).then(() => res.json())
+              }
+              else {
+                res.json();
+              }
+            })
+          });
+      })
   },
 
   getBrackets: (req, res) => {
-    let brackets = bracketIndex.getBrackets({ userId: res.locals.getUserId() })
-
-    res.json(_.map(brackets, bracket => ({
-      self: res.locals.selfLink(`/brackets/${bracket.id}`),
-      id: bracket.id,
-      title: bracket.title,
-      currentRound: bracket.getCurrentTournament().rounds.length,
-      numberOfRounds: bracket.getCurrentTournament().numRounds
-    })));
+    cgData.getActive({ userId: res.locals.getUserId() })
+      .then(groups => {
+        const retVal = _.map(groups, group => {
+          return {
+            self: res.locals.selfLink(`/brackets/${group.contestantGroupId}`),
+            id: group.contestantGroupId,
+            title: group.title || "untitled",
+            currentRound: 0,
+            numberOfRounds: 0
+          }
+        });
+        res.json(retVal);
+      })
   }
 };

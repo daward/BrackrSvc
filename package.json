@@ -8,10 +8,12 @@
   "license": "",
   "main": "app.js",
   "dependencies": {
+    "bluebird": "^3.5.0",
     "cors": "^2.8.4",
     "dynamodb": "^1.0.0",
     "express": "^4.12.3",
     "google-images": "^2.1.0",
+    "hashids": "^1.1.1",
     "lodash": "^4.17.4",
     "shortid32": "^0.1.1",
     "swagger-express-mw": "^0.1.0",

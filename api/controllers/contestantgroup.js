@@ -12,20 +12,19 @@
  */
 const _ = require("lodash");
 const cgData = require("../../model/database/contestantgroupdata");
-const shortid = require('shortid32');
 
 module.exports = {
 
   createContestantGroup: (req, res) => {
     let choices = req.swagger.params.contestantGroupRequest.value.choices;
     let title = req.swagger.params.contestantGroupRequest.value.title;
-    let userId = req.swagger.params["X-User-ID"].value;
+    let userId = res.locals.getUserId();
 
-    cgData.save({
-      id: shortid.generate(), userId, title, choices, cb: group => {
-        res.json(group)
-      }
-    });
+    cgData.save({ userId, title, choices })
+      .then(group => {
+        delete group.userId;
+        res.json(group);
+      });
   },
 
   updateContestantGroup: (req, res) => {
@@ -33,42 +32,35 @@ module.exports = {
     let title = req.swagger.params.contestantGroupRequest.value.title;
     let choices = req.swagger.params.contestantGroupRequest.value.choices;
 
-    let cg = cgData.get({
-      userId: res.locals.getUserId(), id,
-      cb: ({ err, group }) => {
-        cgData.save({
-          id: group.id, userId: group.userId, title, choices, cb: group => {
-            res.json(group);
-          }
-        });
-      }
-    });
+    cgData.get({ userId: res.locals.getUserId(), id })
+      .then(group => cgData.save({ id: group.id, userId: group.userId, title, choices }))
+      .then(group => {
+        delete group.userId;
+        res.json(group)
+      })
+      .catch(e => console.log(e));
   },
 
   getContestantGroup: (req, res) => {
     let id = req.swagger.params.id.value;
 
-    cgData.get({
-      userId: res.locals.getUserId(), id,
-      cb: ({ err, group }) => {
+    cgData.get({ userId: res.locals.getUserId(), id })
+      .then(group =>
         res.json({
           choices: group.choices,
-          contestantGroupId: group.id,
+          contestantGroupId: group.contestantGroupId,
           title: group.title
-        });
-      }
-    });
+        }));
   },
 
   getContestantGroups: (req, res) => {
-    let data = cgData.getAll({
-      userId: res.locals.getUserId(), cb: results => {
-        res.json(_.map(results.Items, item => ({
-          self: res.locals.selfLink(`/create/${item.attrs.id}`),
-          title: item.attrs.title,
-          id: item.attrs.id
+    cgData.getTemplates({ userId: res.locals.getUserId() })
+      .then(groups =>
+        res.json(_.map(groups, group => ({
+          self: res.locals.selfLink(`/create/${group.contestantGroupId}`),
+          title: group.title,
+          id: group.contestantGroupId
         })))
-      }
-    });
+      );
   }
 }

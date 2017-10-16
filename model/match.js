@@ -1,10 +1,26 @@
 const _ = require("lodash");
+const HashIds = require("hashids");
+const hasher = new HashIds("saltysalt");
 
 class Match {
   constructor({ id, players }) {
     this.id = id;
     this.players = players;
     this.votes = [];
+  }
+
+  static encode({ players, roundNumber }) {
+    return hasher.encode(roundNumber, players[0].seed, players[1].seed);
+  }
+
+  static decode(hash) {
+    const values = hasher.decode(hash);
+    return {
+      roundNumber: values[0],
+      seeds: [
+        values[1], values[2]
+      ]
+    }
   }
 
   getScoresBySeed() {
