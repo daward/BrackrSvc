@@ -317,7 +317,6 @@ definitions:
         $ref: '#/definitions/Player'
       loser:
         $ref: '#/definitions/Player'
-
   Player:
     required:
       - data
@@ -329,6 +328,15 @@ definitions:
         type: number
       score:
         type: number
+  Winner:
+    required:
+      - tournamentNumber
+      - choice
+    properties:
+      tournamentNumber:
+        type: number
+      choice:
+        $ref: '#/definitions/Choice'
   Choice:
     required:
       - text
@@ -427,7 +435,7 @@ definitions:
       results:
         type: array
         items:
-          $ref: '#/definitions/Choice'
+          $ref: '#/definitions/Winner'
   Match:
     required:
       - id

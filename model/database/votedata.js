@@ -6,7 +6,7 @@ const _ = require("lodash");
 
 const VoteModel = database.define('Vote', {
   hashKey: 'matchId',
-  rangeKey: 'roundNumber',
+  rangeKey: 'userId',
 
   // add the timestamp attributes (updatedAt, createdAt) 
   timestamps: true,

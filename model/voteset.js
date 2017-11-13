@@ -5,19 +5,29 @@ class VoteSet {
     this.votes = votes;
   }
 
-  winners() {
+  winners(matches) {
 
-    // group the set of votes by match, turn back into array
-    let matches = _.objectToArray({
-      obj: _.groupBy(this.votes, vote => vote.matchId),
-      keyName: "matchId",
-      valueName: "votes" });
+    let matchResults = _.map(matches, match => {
+      let retVal = {};
+
+      retVal[match[0]] = 0;
+      retVal[match[1]] = 0;
+      return retVal;
+    });  
 
     // for every match, count up the votes for each
-    let results = _.map(matches, match => _.countBy(match.votes, 'seed'));
+    let totalVotes = _.countBy(this.votes, 'seed');
 
-    return results;
-  } 
+    _.forEach(matchResults, match => {
+      let topSeed = _.keys(match)[0];
+      let underdog = _.keys(match)[1];
+
+      match[topSeed] = totalVotes[topSeed] || 0;
+      match[underdog] = totalVotes[underdog] || 0;
+    });
+
+    return matchResults;
+  }
 }
 
 module.exports = VoteSet;

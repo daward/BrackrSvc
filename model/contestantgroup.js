@@ -13,7 +13,7 @@ class ContestantGroup {
   seed() {
     let seed = 1;
     // concatenate slugs to the given choices 
-    let totalPlayers = _.concat(this.choices, _.fill(new Array(this.roundNumberOfPlayers() - this.choices.length), { slug: true }))
+    let totalPlayers = _.concat(this.choices, _.fill(new Array(this.roundNumberOfPlayers() - this.choices.length), { slug: true, text: "N/A" }))
 
     this.choices = _.map(totalPlayers, choice => ({
       seed: seed++,

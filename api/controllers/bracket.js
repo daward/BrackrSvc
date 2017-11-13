@@ -39,13 +39,41 @@ const userBracketIds = (req, res) => {
   return retVal;
 }
 
-const getTournament = (req, res) => {
+const getTournament = (req, res, tournamentNumber) => {
   let bracketId = res.locals.getBracketId();
   let userId = res.locals.getUserId();
   return P.join(
     cgData.get({ id: bracketId }),
-    roundData.getForBracket(bracketId),
+    roundData.getForBracket({ bracketId, tournamentNumber }),
     (contestantGroup, roundSet) => new Tournament({ contestantGroup, roundSet, userId }));
+}
+
+const getCurrentTournamentData = (tournament) => {
+  if (!tournament.isVoting()) {
+    return P.resolve({
+      currentRound: tournament.currentRoundNumber(),
+      results: tournament.allWinners(),
+      admin: tournament.isAdmin(),
+      title: tournament.title(),
+      matches: [],
+      bracketId: tournament.bracketId()
+    });
+  } else {
+    return voteData.getUserVotes({ bracketId: tournament.bracketId(), userId: tournament.userId })
+      .then(votes => {
+        votes = _.filter(votes.votes, vote => vote.roundNumber === tournament.currentRoundNumber());
+        return {
+          // current round is a decrement of the last round
+          currentRound: tournament.currentRoundNumber(),
+          // the total rounds is the maximum round number in the tournament
+          totalRounds: tournament.totalRounds(),
+          matches: tournament.matches({ votes }),
+          admin: tournament.isAdmin(),
+          title: tournament.title(),
+          bracketId: tournament.bracketId()
+        }
+      })
+  }
 }
 
 module.exports = {
@@ -71,14 +99,9 @@ module.exports = {
    */
   getCompletedTournament: (req, res) => {
     let tournamentId = req.swagger.params.tournamentId.value;
-    let bracketId = res.locals.getBracketId();
 
-    P.join(
-      cgData.get({ id: bracketId }),
-      roundData.getForBracket(bracketId),
-      (contestantGroup, rounds) => new Bracket(contestantGroup, rounds))
-      .then(bracket => {
-        const tournament = bracket.tournaments[tournamentId];
+    getTournament(req, res, tournamentId)
+      .then(tournament => {
         const rounds = tournament.getCompletedRounds();
         res.json({ rounds });
       });
@@ -102,38 +125,19 @@ module.exports = {
   },
 
   currentRound: (req, res) => {
+    // first load up the tournament we're talking about
     getTournament(req, res)
-      .then(tournament => {
-        let current;
-        if (!tournament.isVoting()) {
-          current = {
-            results: [tournament.players()[0].data],
-            admin: tournament.isAdmin(),
-            title: tournament.title()
-          }
-        } else {
-          current = {
-            // current round is a decrement of the last round
-            currentRound: tournament.currentRoundNumber(),
-            // the total rounds is the maximum round number in the tournament
-            totalRounds: tournament.totalRounds(),
-            matches: tournament.matches(),
-            admin: tournament.isAdmin(),
-            title: tournament.title()
-          }
-        }
-
-        // if the round is over, or you aren't the admin, you don't need to know
-        // anything about the number of votes
-        if (current.results || !tournament.isAdmin()) {
-          res.json(current);
-        } else {
-          // if the tournament isnt over and you're the admin you'll want to know how many votes there are
-          voteData.getRoundVotes({ bracketId: tournament.bracketId(), roundNumber: tournament.currentRoundNumber() })
+      .then(tournament => getCurrentTournamentData(tournament))
+      .then(current => {
+        // if the round is over and you're the admin you'll want to know how many votes there are
+        if (!current.matches.length && current.admin) {
+          voteData.getRoundVotes({ bracketId: current.bracketId, roundNumber: current.currentRound })
             .then(voteSet => {
               current.totalVotes = voteSet.votes.length;
               res.json(current);
             });
+        } else {
+          res.json(current);
         }
       });
   },
@@ -162,20 +166,23 @@ module.exports = {
         // get all the votes for the round to decide the winners
         voteData.getRoundVotes({ bracketId: tournament.bracketId(), roundNumber: tournament.currentRoundNumber() })
           .then(voteSet => {
+            let matches = _.map(tournament.matches({ slugsAllowed: true }), match => {
+              return _.map(match.players, player => player.seed);
+            })
             roundData.save({
               bracketId: tournament.bracketId(),
               roundNumber: tournament.currentRoundNumber(),
               tournamentNumber: tournament.tournamentNumber(),
-              results: voteSet.winners()
+              results: voteSet.winners(matches)
             })
-            .then(() => {
-              if(tournament.currentRoundNumber() === 1) {
-                cgData.stopVoting(tournament.bracketId()).then(() => res.json())
-              }
-              else {
-                res.json();
-              }
-            })
+              .then(() => {
+                if (tournament.currentRoundNumber() === 1) {
+                  cgData.stopVoting(tournament.bracketId()).then(() => res.json())
+                }
+                else {
+                  res.json();
+                }
+              })
           });
       })
   },

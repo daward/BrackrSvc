@@ -20,7 +20,7 @@ const RoundModel = database.define('CompletedRound', {
     results: Joi.string()
   },
   indexes: [{
-    hashKey: 'bracketId', rangeKey: 'roundId', name: 'bracketIndex', type: 'global'
+    hashKey: 'bracketId', rangeKey: 'tournamentNumber', name: 'bracketIndex', type: 'global'
   }]
 });
 
@@ -46,11 +46,18 @@ module.exports = {
       }
     })),
 
-  getForBracket: bracketId => new P((resolve, reject) => {
-    RoundModel.query(bracketId)
-      .usingIndex('bracketIndex').loadAll().exec((err, results) => {
-        resolve(new RoundSet(_.map(results.Items, item => item.attrs)));
-      })
+  getForBracket: ({ bracketId, tournamentNumber }) => new P((resolve, reject) => {
+    if (tournamentNumber !== undefined) {
+      RoundModel.query(bracketId)
+        .usingIndex('bracketIndex')
+        .where('tournamentNumber').equals(tournamentNumber)
+        .loadAll().exec((err, results) => resolve(new RoundSet(_.map(results.Items, item => item.attrs))));
+    } else {
+      RoundModel.query(bracketId)
+        .usingIndex('bracketIndex')
+        .loadAll().exec((err, results) => resolve(new RoundSet(_.map(results.Items, item => item.attrs))));
+    }
+
   }),
 
   save: ({ roundId, bracketId, roundNumber, tournamentNumber, results }) => new P((resolve, reject) =>
